@@ -1,0 +1,42 @@
+# Removed the obsolete 'version' tag based on your previous terminal warning!
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: financial_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+
+  web:
+    build: .
+    container_name: financial_fastapi
+    ports:
+      - "8000:8000"
+    environment:
+      # This passes your API key from your local .env file into the container
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+    volumes:
+      # This shares your local folder with the container so SQLite and PDFs sync perfectly!
+      - .:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - rabbitmq
+
+  worker:
+    build: .
+    container_name: financial_celery_worker
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+    volumes:
+      - .:/app
+    # Notice we removed --pool=solo! Linux containers don't need that Windows hack.
+    command: celery -A worker.celery_app worker --loglevel=info 
+    depends_on:
+      - rabbitmq
+      - web

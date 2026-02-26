@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Financial Analyst</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+
+    <div class="max-w-4xl mx-auto py-10 px-4">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-gray-900">AI Financial Document Analyzer</h1>
+            <p class="mt-2 text-lg text-gray-600">Enterprise Multi-Agent Analysis Queue</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <form id="uploadForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Financial Document (PDF)</label>
+                    <input type="file" id="fileInput" accept=".pdf" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Custom Prompt (Optional)</label>
+                    <input type="text" id="queryInput" placeholder="Analyze this financial document for investment insights"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="submit" id="submitBtn"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    Submit to AI Queue
+                </button>
+            </form>
+        </div>
+
+        <div id="monitorSection" class="hidden bg-white rounded-lg shadow-lg p-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold text-gray-900">Task Monitor</h2>
+                <span id="statusBadge" class="px-4 py-1 rounded-full text-sm font-bold bg-yellow-200 text-yellow-800">
+                    PENDING
+                </span>
+            </div>
+            <p class="text-sm text-gray-500 mb-6">Task ID: <span id="taskIdDisplay" class="font-mono">...</span></p>
+            
+            <div id="resultArea" class="prose max-w-none bg-gray-50 p-6 rounded border border-gray-200 min-h-[100px]">
+                <p class="text-gray-500 italic animate-pulse" id="loadingText">Waiting for AI agents to process document...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('fileInput');
+            const queryInput = document.getElementById('queryInput');
+            const submitBtn = document.getElementById('submitBtn');
+            const monitorSection = document.getElementById('monitorSection');
+            const statusBadge = document.getElementById('statusBadge');
+            const resultArea = document.getElementById('resultArea');
+            const taskIdDisplay = document.getElementById('taskIdDisplay');
+            const loadingText = document.getElementById('loadingText');
+
+            // UI Reset
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Queuing...";
+            monitorSection.classList.remove('hidden');
+            resultArea.innerHTML = '<p class="text-gray-500 italic animate-pulse">Waiting for AI agents to process document...</p>';
+            statusBadge.className = "px-4 py-1 rounded-full text-sm font-bold bg-yellow-200 text-yellow-800";
+            statusBadge.innerText = "PENDING";
+
+            // Prepare Data
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            if (queryInput.value) {
+                formData.append('query', queryInput.value);
+            }
+
+            try {
+                // 1. Send to FastAPI
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    const taskId = data.task_id;
+                    taskIdDisplay.innerText = taskId;
+                    submitBtn.innerText = "Document in Queue!";
+                    
+                    // 2. Start Polling the Status Endpoint
+                    pollStatus(taskId);
+                } else {
+                    alert("Error: " + data.detail);
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Submit to AI Queue";
+                }
+            } catch (error) {
+                alert("Upload failed: " + error);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Submit to AI Queue";
+            }
+        });
+
+        async function pollStatus(taskId) {
+            try {
+                const response = await fetch(`/status/${taskId}`);
+                const data = await response.json();
+                
+                const statusBadge = document.getElementById('statusBadge');
+                const resultArea = document.getElementById('resultArea');
+
+                // Update Badge Color based on status
+                if (data.status === "PROCESSING") {
+                    statusBadge.className = "px-4 py-1 rounded-full text-sm font-bold bg-blue-200 text-blue-800 animate-pulse";
+                    statusBadge.innerText = "PROCESSING (AI is reading...)";
+                } else if (data.status === "COMPLETED") {
+                    statusBadge.className = "px-4 py-1 rounded-full text-sm font-bold bg-green-200 text-green-800";
+                    statusBadge.innerText = "COMPLETED";
+                    // Parse Markdown to HTML
+                    resultArea.innerHTML = marked.parse(data.result);
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('submitBtn').innerText = "Analyze Another Document";
+                    return; // Stop polling!
+                } else if (data.status === "FAILED") {
+                    statusBadge.className = "px-4 py-1 rounded-full text-sm font-bold bg-red-200 text-red-800";
+                    statusBadge.innerText = "FAILED";
+                    resultArea.innerHTML = `<p class="text-red-500">${data.result}</p>`;
+                    document.getElementById('submitBtn').disabled = false;
+                    return; // Stop polling!
+                }
+
+                // If not done, check again in 2 seconds
+                setTimeout(() => pollStatus(taskId), 2000);
+
+            } catch (error) {
+                console.error("Polling error:", error);
+            }
+        }
+    </script>
+</body>
+</html>

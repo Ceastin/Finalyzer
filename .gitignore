@@ -1,0 +1,47 @@
+# Environments
+venv/
+env/
+.venv/
+env.bak/
+venv.bak/
+
+# Environment Variables / Secrets
+.env
+.env.local
+.env.*
+
+# Local Database
+*.db
+*.sqlite3
+financial_data.db
+
+# User Uploads & Data
+data/
+*.pdf
+outputs/
+
+# Python Cache & Byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Celery & RabbitMQ
+celerybeat-schedule
+celerybeat.pid
+*.pid
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
