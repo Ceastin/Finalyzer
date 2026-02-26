@@ -13,6 +13,10 @@ This project was built to solve the **"Financial Document Analyzer - Debug Assig
 🌐 **Modern UI Dashboard:** Built a reactive frontend to monitor the AI agents in real-time.
 🐳 **Fully Containerized:** One-click deployment using Docker Compose.
 
+RESULTS-
+![result screen](https://github.com/user-attachments/assets/2353416d-71c9-4f88-a110-71ed0392d365)
+![rseult response](https://github.com/user-attachments/assets/0f0b2d4e-e618-42d5-9e23-ea608a55aafe)
+
 ---
 
 ## 🐛 Bugs Found & How They Were Fixed
