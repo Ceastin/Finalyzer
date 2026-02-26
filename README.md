@@ -1,8 +1,10 @@
-# 📊 Financial Document Analyzer - AI Multi-Agent System
+# Financial Document Analyzer - AI Multi-Agent System
+![d5f77c104128975 5f5bdc0d6d7b6](https://github.com/user-attachments/assets/ad48f2be-e853-4f18-a79c-3c30b7d6eeb3)
 
 A comprehensive, enterprise-grade financial document analysis system that processes corporate reports, financial statements, and investment documents using a highly optimized CrewAI multi-agent pipeline. 
 
 This project was built to solve the **"Financial Document Analyzer - Debug Assignment"**. It has been heavily debugged, refactored, and upgraded from a basic synchronous script into a fully containerized, asynchronous microservices architecture.
+<img width="2816" height="1536" alt="Gemini_Generated_Image_s5p7rds5p7rds5p7" src="https://github.com/user-attachments/assets/aca00a52-aa68-410d-b9d1-fb1ea6c22e1c" />
 
 ## ✨ Features & Mission Accomplishments
 
